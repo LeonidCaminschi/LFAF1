@@ -155,11 +155,11 @@ String 4 true
 String 5 true
 
 Sadly couldnt upload photos but uploaded the output of the program execution.
-for execution on own machine do the following commands:
-cd src/cmake-build-debug
-cmake ..
-make -j4
-./LFAF
+for execution on own machine do the following commands:\n
+cd src/cmake-build-debug\n
+cmake ..\n
+make -j4\n
+./LFAF\n
 
 One thing to keep in mind it will only execute the first variant since it takes a bit of time
 to execute all 32 variants due to me putting a sleep inside the code so that the randomized
@@ -171,5 +171,5 @@ they are used and how they work and even how to program one to automate your wor
 
 ## References
 
-Mr. Drumea's Laboratories
+Mr. Drumea's Laboratories\n
 Mrs. Coiuhari's Lectures
