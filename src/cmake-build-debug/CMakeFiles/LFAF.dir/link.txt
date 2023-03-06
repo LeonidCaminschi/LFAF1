@@ -1,1 +1,0 @@
-/usr/bin/c++ -g CMakeFiles/LFAF.dir/main.cpp.o -o LFAF 

@@ -1,3 +1,0 @@
-/home/leonidas/LFAF/src/cmake-build-debug/CMakeFiles/LFAF.dir
-/home/leonidas/LFAF/src/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/leonidas/LFAF/src/cmake-build-debug/CMakeFiles/rebuild_cache.dir
