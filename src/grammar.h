@@ -93,9 +93,10 @@ struct Grammar {
         while(variant_copy.find("\n") != string::npos) {
             productions.emplace_back(Rule(variant_copy.substr(0, 1), variant_copy.substr(4, variant_copy.find("\n")-4)));
             variant_copy.replace(0, variant_copy.find("\n")+1, "");
-//            cout << variant_copy << endl;
+            cout << productions[productions.size()-1] << endl;
             if(variant_copy.size() < 3) break;
         }
+        cout << endl;
 
         startingCharacter = "S";
     }

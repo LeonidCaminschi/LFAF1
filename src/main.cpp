@@ -33,8 +33,9 @@ int main() {
                 cout << "String 3 " << (automata.validate(s3) ? "true" : "false") << endl;
                 cout << "String 4 " << (automata.validate(s4) ? "true" : "false") << endl;
                 cout << "String 5 " << (automata.validate(s5) ? "true" : "false") << endl;
+                cout << endl;
                 variant = "";
-                break; // remove break for all 32 variants :)
+//                break; // remove break for all 32 variants :)
             }
         }
     }
