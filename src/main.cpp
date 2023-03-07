@@ -16,7 +16,8 @@ int main() {
             if (variant != "\r\n" && variant.find("{") != string::npos) {
                 Grammar grammar(variant);
                 Automata automata(grammar);
-                grammar.clasify();
+                Automata::AutomataToGrammar(automata);
+                cout << grammar.clasify() << endl;
 //                for (int i=1; i<6; i++) {
 //                    string word = grammar.generateWord();
 //                    cout << "Word #" << i << ": " << word << endl;

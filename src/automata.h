@@ -38,7 +38,7 @@ struct Automata {
         return std::count(final_states.begin(), final_states.end(), curr) > 0;
     }
 
-    Grammar AutomataToGrammar(const Automata& automata) {
+    static Grammar AutomataToGrammar(const Automata& automata) {
         Grammar grammar;
         grammar.nonTerminalVariables = automata.states;
         grammar.terminalVariables = automata.symbols;
