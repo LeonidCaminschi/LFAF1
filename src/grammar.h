@@ -127,6 +127,7 @@ struct Grammar {
         }
     }
 
+    Grammar() {}
     Grammar(const string& variant) {
         string variant_copy = variant;
 
