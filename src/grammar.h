@@ -4,6 +4,7 @@
 #include <random>
 #include <cstdlib>
 #include <csignal>
+#include <set>
 
 using namespace std;
 
@@ -69,6 +70,63 @@ struct Grammar {
         return word;
     }
 
+    bool isType3Grammar(const vector<Rule>& P) {
+        for (const Rule& prod : P) {
+            // A production is of type 3 if it is of the form A -> aB or A -> a
+            if (prod.Right.length() > 1 || !isupper(prod.Left[0]) || !islower(prod.Right[0])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+// Function to check if a grammar is of type 2
+    bool isType2Grammar(const vector<Rule>& P) {
+        for (const Rule& prod : P) {
+            // A production is of type 2 if it is of the form A -> α
+            if (prod.Right.empty() || !isupper(prod.Left[0])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+// Function to check if a grammar is of type 1
+    bool isType1Grammar(const vector<Rule>& P) {
+        for (const Rule& prod : P) {
+            // A production is of type 1 if it is of the form αAβ -> αγβ
+            if (prod.Right.length() < 2 || !isupper(prod.Left[0]) || prod.Right[0] == prod.Left[0]) {
+                return false;
+            }
+            bool foundNonterminal = false;
+            for (char c : prod.Right) {
+                if (isupper(c)) {
+                    if (foundNonterminal) {
+                        return false;
+                    }
+                    foundNonterminal = true;
+                } else {
+                    if (!foundNonterminal) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    string clasify() {
+        if (isType3Grammar(productions)) {
+            return "Type 3";
+        } else if (isType2Grammar(productions)) {
+            return "Type 2";
+        } else if (isType1Grammar(productions)) {
+            return "Type 1";
+        } else {
+            return "Type 0";
+        }
+    }
+
     Grammar(const string& variant) {
         string variant_copy = variant;
 
@@ -94,11 +152,12 @@ struct Grammar {
         string tmp;
         while(variant_copy.find("\n") != string::npos) {
             productions.emplace_back(Rule(variant_copy.substr(0, 1), variant_copy.substr(4, variant_copy.find("\n")-4)));
+            replace(productions[productions.size()-1].Right, "\r", "");
             variant_copy.replace(0, variant_copy.find("\n")+1, "");
-            cout << productions[productions.size()-1] << endl;
+//            cout << productions[productions.size()-1] << endl;
             if(variant_copy.size() < 3) break;
         }
-        cout << endl;
+//        cout << endl;
 
         startingCharacter = "S";
     }
