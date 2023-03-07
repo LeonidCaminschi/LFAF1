@@ -45,9 +45,11 @@ struct Grammar {
     string generateWord () {
         int count = 1;
         vector<Rule> toBeChanged;
-        srand(time(NULL));
         string word = startingCharacter;
-        sleep(1);
+
+        random_device rnd_device;
+        mt19937 mersenne_engine {rnd_device()};
+
         while (count != 0) {
             count = 0;
             toBeChanged = {};
@@ -60,7 +62,7 @@ struct Grammar {
             }
 
             if (count != 0) {
-                index = rand() % count;
+                index = mersenne_engine() % count;
                 replace(word, toBeChanged[index][0], toBeChanged[index][1]);
             }
         }
@@ -93,10 +95,10 @@ struct Grammar {
         while(variant_copy.find("\n") != string::npos) {
             productions.emplace_back(Rule(variant_copy.substr(0, 1), variant_copy.substr(4, variant_copy.find("\n")-4)));
             variant_copy.replace(0, variant_copy.find("\n")+1, "");
-//            cout << productions[productions.size()-1] << endl;
+            cout << productions[productions.size()-1] << endl;
             if(variant_copy.size() < 3) break;
         }
-//        cout << endl;
+        cout << endl;
 
         startingCharacter = "S";
     }

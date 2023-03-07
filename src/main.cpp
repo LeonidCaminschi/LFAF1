@@ -21,7 +21,8 @@ int main() {
                     cout << "Word #" << i << ": " << word << endl;
                     cout << "String " << i << " " << (automata.validate(word) ? "true" : "false") << endl;
                 }
-                break; // remove break for all 32 variants :)
+//                break; // remove break for all 32 variants :)
+                variant = "";
             }
         }
     }
