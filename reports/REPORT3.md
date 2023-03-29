@@ -1,4 +1,4 @@
-# The title of the work
+# Laboratory 3 Lexer and Tokenizer
 
 ### Course: Formal Languages & Finite Automata
 ### Author: Caminschi Leonid FAF-211 (Leonidas)
@@ -6,18 +6,19 @@
 ----
 
 ## Theory
-Short theory from generating a grammar from an FA is easy since we have done the other way around at the
-first report it involved opening up δ expressions and make them regular grammar expressions
-About automatas there are 2 types encountered in this laboratory NFA and DFA, NFA is a type of 
-automata with just one path / decision between states as DFA could have more than 1 state change at 1 time.
+Short theory for creating a lexer and tokenizer we need to make generalized regex expressions
+to check with our input data and them to check the given text with the given regex expression
+and to iterate through the elements 1 by 1 until we have tokenized each part of the given input
+and give specific situation to result in error messages such as non equal number of parantheses
+and multiple operators one after another.
 
 
 ## Objectives:
 
-* Get accustomed to Grammar and Finite Automatas
-* Learn how to transform from one to another
+* Get accustomed to Lexers and Tokenizers
+* Learn how to create a Tokenizer and Lexer
 * Understand how it is aplicable to language creation
-* Learn differences of NFA and DFA and their applications
+* Learn differences of Tokenizer and Lexer
 
 ## Implementation description
 
@@ -29,150 +30,166 @@ before telling the computer to do it, it was harder than expected but in the end
 
 ```
 
-//for classification of type 3 grammar
-if (prod.Right.length() > 1 || !isupper(prod.Left[0]) || !islower(prod.Right[0])) {
-  return false;
-}
+enum class TokenType {
+    NUMBER, OPERATOR, LPAREN, RPAREN
+};
 
 ```
 
-```
-
-//for classification of type 2 grammar 
-if (prod.Right.empty() || !isupper(prod.Left[0])) {
-  return false;
-}
+Enumerate all the parts of the text as different components
 
 ```
 
-```
+class Token {
+public:
+    TokenType type;
+    string value;
 
-//for classification of type 1 grammar
-if (prod.Right.length() < 2 || !isupper(prod.Left[0]) || prod.Right[0] == prod.Left[0]) {
-  return false;
-}
-bool foundNonterminal = false;
-for (char c : prod.Right) {
-  if (isupper(c)) {
-    if (foundNonterminal) {
-      return false;
+    Token(TokenType type, string value) {
+        this->type = type;
+        this->value = value;
     }
-  foundNonterminal = true;
-} else {
-    if (!foundNonterminal) {
-      return false;
+}
+
+```
+
+I have each token as its type and the value itself so we can divide the text into components
+or tokens
+
+```
+
+class Lexer {
+private:
+    vector<Token> tokens;
+    string text;
+    int position;
+
+public:
+    Lexer(string text) {
+        this->text = text;
+        position = 0;
     }
- }
-
-```
-
-self made function to check the grammars production rules and decide what type of grammer it is 
-it returns a string which needs to pe outputed to see the information for my grammar the result was
-also if none of the 3 types coincide with the given grammar we automaticaly deduce that it is a type 0 grammar.
-
-```
-
-static Grammar AutomataToGrammar(const Automata& automata) {
-  Grammar grammar;
-  grammar.nonTerminalVariables = automata.states;
-  grammar.terminalVariables = automata.symbols;
-  grammar.startingCharacter = automata.start_state;
-
-  for (const auto& [key, value] : automata.transitions) {
-    string lhs = key.first;
-    string rhs = value;
-    grammar.productions.push_back({lhs, rhs});
-  }
-
-  return grammar;
 }
 
 ```
 
-self made function to convert an automata to a grammar having the GrammarToAutomata it was eaey to
-do the same thing but the other way around, removing δ and shifting 1 caracter to the right to do the
-production rules and everything else was just assigning of variables since they are named differently
-but they have the same data
+I have a class lexer which will take the text itself and set the position to 0 and a vector of
+tokens where I am going to save all of the components of the given text
 
 ```
 
-bool isDeterministic() const {
-  std::set<std::pair<std::string, std::string>> visited;
-  for (const auto& [key, value] : transitions) {
-    std::string state = key.first;
-    std::string symbol = key.second;
-    if (visited.count({state, symbol}))
-      return false;
-    visited.insert({state, symbol});
-  }
-  return true;
-}
+        regex pattern("(\\d+\\.?\\d*)|([+*/\\-()])");
+        smatch match;
+        int lpar = 0, rpar = 0;
+        int continuity = -1;
 
 ```
 
-function to check if the said automata is deterministic or not returns true if it is deterministic and 
-false otherwise. the logic behind it being if we visited the node with the state and symbol already
-it is NonDeterministic FA but if we never visited the same state and symbol this means it is a deterministic
-FA
+so here we have the general regex with which I am going to use to determine the text each
+component separately to break it down it will look for a *digit* or *multiple digits* and if the
+*number* has a *. (dot)* and *digits* afterwards so the following numbers are allowed 
+*13* *48.3* ...
+*OR* it searches for an operator such as *+ \* / - ()* if any of the conditions match then the 
+string is matched
 
 ```
 
-void convertNFAToDFA() {
-        std::map<std::pair<std::string, std::string>, std::string> dfaTransitions;
-        std::set<std::string> unprocessedDFAStates;
-        std::map<std::string, std::set<std::string>> nfaStateSubsets;
-        std::set<std::string> startNFAStateSubset = epsilonClosure({start_state});
-        std::string startDFAState = stateSetToString(startNFAStateSubset);
-        nfaStateSubsets[startDFAState] = startNFAStateSubset;
-        unprocessedDFAStates.insert(startDFAState);
+ while (regex_search(text, match, pattern)) {
+//            std::cout << text << endl; // debug purposes
+            for (size_t i = 1; i < match.size(); i++) {
+```
 
-        while (!unprocessedDFAStates.empty()) {
-            std::string dfaState = *unprocessedDFAStates.begin();
-            unprocessedDFAStates.erase(dfaState);
+So my loop works until theres at least 1 match in the given text input and then iterates through the matched string size.
 
-            for (const auto& symbol : symbols) {
-                std::set<std::string> nfaStateSubset = move(nfaStateSubsets[dfaState]);
-                nfaStateSubset = epsilonClosure(nfaStateSubset);
+```
 
-                std::string nfaStateSubsetString = stateSetToString(nfaStateSubset);
-                if (nfaStateSubsets.count(nfaStateSubsetString) == 0) {
-                    nfaStateSubsets[nfaStateSubsetString] = nfaStateSubset;
-                    unprocessedDFAStates.insert(nfaStateSubsetString);
-                }
-
-                std::string nextDFAState = nfaStateSubsetString;
-                dfaTransitions[make_pair(dfaState, symbol)] = nextDFAState;
+                  if (!match[i].str().empty()) {
+                    TokenType type;
+                    string value = match[i].str();
+                    if (i == 1) {
+                        type = TokenType::NUMBER;
+                        if (continuity == 0) {
+                            tokens.clear();
+                            return tokens;
+                        }
+                        continuity = 0;
+                    } else if (value == "+") {
+                        type = TokenType::OPERATOR;
+                        if (continuity == 1) {
+                            tokens.clear();
+                            return tokens;
+                        }
+                        continuity = 1;
+                    } else if (value == "-") {
+                        type = TokenType::OPERATOR;
+                        if (continuity == 1) {
+                            tokens.clear();
+                            return tokens;
+                        }
+                        continuity = 1;
+                    } else if (value == "*") {
+                        type = TokenType::OPERATOR;
+                        if (continuity == 1) {
+                            tokens.clear();
+                            return tokens;
+                        }
+                        continuity = 1;
+                    } else if (value == "/") {
+                        type = TokenType::OPERATOR;
+                        if (continuity == 1) {
+                            tokens.clear();
+                            return tokens;
+                        }
+                        continuity = 1;
+                    } else if (value == "(") {
+                        type = TokenType::LPAREN;
+                        lpar++;
+                    } else if (value == ")") {
+                        type = TokenType::RPAREN;
+                        rpar++;
+                    }
+                    Token token(type, value);
+                    tokens.push_back(token);
+                    position += match[i].length();
+                    break;
+              }
             }
+          text = match.suffix().str();
+        }
+        if (lpar == rpar) {
+            return tokens;
+        } else {
+            tokens.clear();
+            return tokens;
         }
 
-        transitions = dfaTransitions;
-
-        states.clear();
-        final_states.clear();
-        for (const auto& [dfaState, nfaStateSubset] : nfaStateSubsets) {
-            states.push_back(dfaState);
-            if (hasIntersection(nfaStateSubset, std::set(final_states.begin(), final_states.end()))) {
-                final_states.push_back(dfaState);
-            }
-        }
-    }
-
 ```
 
-function to convert an NFA to DFA here were used helper functions such as:<br />
-* epsilonClosure
-* stateSetToString
-* hasIntersection
-which to be fair i did not do myself fully, rather reinterpreted other people's ideas
-after which after calculating NFA's transitions and states we just swap them with his
-current ones to change it from being a NFA to a DFA.
+and inside the loop itself is a if where it searches what did it match with and after finding
+gives it a type and gets stored inside the token vectors. but if there are different numbers
+of left parantheses and right parantheses it will give an warning message and leave the loop or
+if there are 2 operators one after another or there are 2 numbers 1 after another.
 
 
 ## Conclusions / Screenshots / Results
 
-"Type 2" also known as Context-Free was the output of the clasify method from within the grammar 
+Result after executing the code:
 
-"This automata is: Deterministic" output of the isDeterministic() function
+```
+Token(0, "2")
+Token(1, "*")
+Token(2, "(")
+Token(2, "(")
+Token(0, "3")
+Token(1, "+") 
+Token(0, "4")
+Token(3, ")")
+Token(1, "/")
+Token(0, "5")
+Token(3, ")")
+Token(1, "/")
+Token(0, "13.451")  
+```
 
 Sadly couldnt upload photos but uploaded the output of the program execution.
 for execution on own machine do the following commands:<br />
@@ -183,13 +200,13 @@ cmake ..<br />
 make<br />
 ./LFAF<br />
 
-Updated from previouse laboratory work so now the work speed is increased significantly without any 
-drawbacks and also made code cleaner and a lot easier to read but at times it can still be messy.
+Updated from last laboratory everything unused was commented in case of need to use them in
+later laboratories otherwise everything was left as is
 
-In conclusion i can say that i have learned a lot about Finite Automatas and their properties ant how
-to change a NFA to DFA and a FA to Grammar while understanding the problems of each type of FA.
+In conclusion i can say that i have learned a lot about Tokenizers and Lexers and their
+properties and how to differentiate a Tokenizer to a Lexer.
 
 ## References
 
-Mr. Drumea's Laboratories<br />
-Mrs. Cojuhari's Lectures
+*Mr. Drumea's Laboratories*<br />
+*Mrs. Cojuhari's Lectures*
