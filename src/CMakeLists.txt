@@ -3,4 +3,4 @@ project(LFAF)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(LFAF main.cpp grammar.h automata.h)
+add_executable(LFAF main.cpp grammar.h automata.h lexer.h)
