@@ -1,4 +1,4 @@
-# Laboratory 3 Lexer and Tokenizer
+# Laboratory 4 CNF (Chomsky Normal Form)
 
 ### Course: Formal Languages & Finite Automata
 ### Author: Caminschi Leonid FAF-211 (Leonidas)
@@ -6,207 +6,230 @@
 ----
 
 ## Theory
-Short theory for creating a lexer and tokenizer we need to make generalized regex expressions
-to check with our input data and them to check the given text with the given regex expression
-and to iterate through the elements 1 by 1 until we have tokenized each part of the given input
-and give specific situation to result in error messages such as non equal number of parantheses
-and multiple operators one after another.
+Short theory for obtaining chomsky normal form we have to go through 5 stages
+1) remove epsilon enclosures and replace them at a higher level with terminal characters
+2) removing NonTerminal - NonTerminal productions and generating their equivalent
+3) removing the innacesible symbols if there are any inaccesible symbols after the first 2 steps
+4) removing non productive productions which means removing any loop in our productions
+5) We modify the final productions according to rules:
+    a) Are allowed Terminal -> NonTerminal
+    b) Are allowed Terminal -> Terminal + Terminal
+    c) in case of Terminal -> Terminal + NonTerminal we create a new production storing the nonterminal value
 
 
 ## Objectives:
 
-* Get accustomed to Lexers and Tokenizers
-* Learn how to create a Tokenizer and Lexer
-* Understand how it is aplicable to language creation
-* Learn differences of Tokenizer and Lexer
+* Get accustomed to CNF and step by step transformation
+* Learn how to create a program to automatically transform into CNF
+* Understand how it is aplicable 
 
 ## Implementation description
 
 On the implementation of the solution to this laboratory work i tried doing everything on paper and understand
 everything thoroughly before trying to code the solution to this problem so that i have the basics in the head
 before telling the computer to do it, it was harder than expected but in the end i think it ended up working well.
+All was done
 
-* Code snippets from your files.
+* Code snippets from my files.
 
-```
-
-enum class TokenType {
-    NUMBER, OPERATOR, LPAREN, RPAREN
-};
+We have a centralized method which calls each step of CNF separately for simplicity sake
 
 ```
 
-Enumerate all the parts of the text as different components
-
-```
-
-class Token {
-public:
-    TokenType type;
-    string value;
-
-    Token(TokenType type, string value) {
-        this->type = type;
-        this->value = value;
-    }
+void toCNF() {
+        eliminateEpsilonProductions();
+        eliminateRenaming();
+        eliminateInaccessibleSymbols();
+        eliminateNonproductiveSymbols();
+        convertToChomskyNormalForm();
 }
 
 ```
 
-I have each token as its type and the value itself so we can divide the text into components
-or tokens
+We eliminate each production with epsilon and then check for Terminal character eliminated 
+so we update each other 
+example S -> Ca , C -> ε
+we remove C -> ε and change S -> Ca to S -> a
 
 ```
 
-class Lexer {
-private:
-    vector<Token> tokens;
-    string text;
-    int position;
-
-public:
-    Lexer(string text) {
-        this->text = text;
-        position = 0;
-    }
-}
-
-```
-
-I have a class lexer which will take the text itself and set the position to 0 and a vector of
-tokens where I am going to save all of the components of the given text
-
-```
-
-        regex pattern("(\\d+\\.?\\d*)|([+*/\\-()])");
-        smatch match;
-        int lpar = 0, rpar = 0;
-        int continuity = -1;
-
-```
-
-so here we have the general regex with which I am going to use to determine the text each
-component separately to break it down it will look for a *digit* or *multiple digits* and if the
-*number* has a *. (dot)* and *digits* afterwards so the following numbers are allowed 
-*13* *48.3* ...
-*OR* it searches for an operator such as *+ \* / - ()* if any of the conditions match then the 
-string is matched
-
-```
-
- while (regex_search(text, match, pattern)) {
-//            std::cout << text << endl; // debug purposes
-            for (size_t i = 1; i < match.size(); i++) {
-```
-
-So my loop works until theres at least 1 match in the given text input and then iterates through the matched string size.
-
-```
-
-                  if (!match[i].str().empty()) {
-                    TokenType type;
-                    string value = match[i].str();
-                    if (i == 1) {
-                        type = TokenType::NUMBER;
-                        if (continuity == 0) {
-                            tokens.clear();
-                            return tokens;
-                        }
-                        continuity = 0;
-                    } else if (value == "+") {
-                        type = TokenType::OPERATOR;
-                        if (continuity == 1) {
-                            tokens.clear();
-                            return tokens;
-                        }
-                        continuity = 1;
-                    } else if (value == "-") {
-                        type = TokenType::OPERATOR;
-                        if (continuity == 1) {
-                            tokens.clear();
-                            return tokens;
-                        }
-                        continuity = 1;
-                    } else if (value == "*") {
-                        type = TokenType::OPERATOR;
-                        if (continuity == 1) {
-                            tokens.clear();
-                            return tokens;
-                        }
-                        continuity = 1;
-                    } else if (value == "/") {
-                        type = TokenType::OPERATOR;
-                        if (continuity == 1) {
-                            tokens.clear();
-                            return tokens;
-                        }
-                        continuity = 1;
-                    } else if (value == "(") {
-                        type = TokenType::LPAREN;
-                        lpar++;
-                    } else if (value == ")") {
-                        type = TokenType::RPAREN;
-                        rpar++;
-                    }
-                    Token token(type, value);
-                    tokens.push_back(token);
-                    position += match[i].length();
-                    break;
-              }
+            if (r.Right == "ε") {
+                epsilonVars.insert(r.Left);
             }
-          text = match.suffix().str();
-        }
-        if (lpar == rpar) {
-            return tokens;
-        } else {
-            tokens.clear();
-            return tokens;
+            
+```
+```
+                    for (const auto &c: it->Right) {
+                        if (string(1, c) == var) {
+                            size_t n = combinations.size();
+                            for (size_t i = 0; i < n; i++) {
+                                combinations.push_back(combinations[i]);
+                                combinations.back().push_back(c);
+                                combinations[i].push_back(' ');
+                            }
+                        } else {
+                            for (auto &s: combinations) {
+                                s.push_back(c);
+                            }
+                        }
+                    }
+
+```
+
+We eliminate renaming and the replace with their equvalent parts
+A -> B would lets assume be changed to A -> C , C -> B
+
+```
+
+        for (const auto &r: productions) {
+            if (r.Right.size() == 1 && isupper(r.Right[0])) {
+                replacements.emplace(r.Left, vector<vector<string>>{{r.Right}});
+            } else {
+                vector<vector<string>> right_parts;
+                vector<string> current_part;
+                for (char c: r.Right) {
+                    if (isupper(c)) {
+                        if (!current_part.empty()) {
+                            right_parts.push_back(current_part);
+                            current_part.clear();
+                        }
+                        current_part.push_back(string(1, c));
+                    } else {
+                        current_part.push_back(string(1, c));
+                    }
+                }
+                if (!current_part.empty()) {
+                    right_parts.push_back(current_part);
+                }
+                if (replacements.count(r.Left) == 0) {
+                    replacements.emplace(r.Left, vector<vector<string>>{right_parts[0]});
+                } else {
+                    replacements[r.Left].push_back(right_parts[0]);
+                }
+                for (size_t i = 1; i < right_parts.size(); i++) {
+                    replacements[r.Left].push_back(right_parts[i]);
+                }
+            }
         }
 
 ```
 
-and inside the loop itself is a if where it searches what did it match with and after finding
-gives it a type and gets stored inside the token vectors. but if there are different numbers
-of left parantheses and right parantheses it will give an warning message and leave the loop or
-if there are 2 operators one after another or there are 2 numbers 1 after another.
+Now we eliminate innaccesible symbols example:
+S -> A , A -> B , D -> B
+in this case D -> B is going to get removed
 
+```
+
+            for (const auto &r: productions) {
+                if (find(reachable_symbols.begin(), reachable_symbols.end(), r.Left) != reachable_symbols.end()) {
+                    for (char c: r.Right) {
+                        if (isupper(c)) {
+                            string var(1, c);
+                            if (find(reachable_symbols.begin(), reachable_symbols.end(), var) ==
+                                reachable_symbols.end()) {
+                                reachable_symbols.push_back(var);
+                                found_new_symbol = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+```
+
+now we eliminate non productive symbols
+example S -> A , A -> S
+
+```
+
+            for (const auto &r: productions) {
+                if (find(productive_symbols.begin(), productive_symbols.end(), r.Left) != productive_symbols.end()) {
+                    bool is_productive = true;
+                    for (char c: r.Right) {
+                        if (isupper(c)) {
+                            string var(1, c);
+                            if (find(productive_symbols.begin(), productive_symbols.end(), var) ==
+                                productive_symbols.end()) {
+                                is_productive = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (is_productive) {
+                        string var = string() + r.Left;
+                        if (find(productive_symbols.begin(), productive_symbols.end(), var) ==
+                            productive_symbols.end()) {
+                            productive_symbols.push_back(var);
+                            found_new_symbol = true;
+                        }
+                    }
+                }
+            }
+            
+```
+
+Now we conver the final result into Chomsky normal Form as explained in the theory
+S -> Aa will get transformed into S -> AX1 , X1 -> a
+
+```
+
+        for (Rule &r: productions) {
+            if (r.Right.size() > 2) {
+                string newVar = "X" + to_string(index++);
+                int length = r.Right.length();
+                for (int i = 0; i < length - 2; i++) {
+                    string newRuleVar = (i == 0) ? r.Left : newVar;
+                    string newRuleRight = r.Right.substr(i, 2);
+                    productions.push_back({newRuleVar, newRuleRight});
+                    r.Right.replace(i, 2, newRuleVar);
+                }
+                productions.push_back({newVar, r.Right.substr(length - 2, 2)});
+                r.Right.replace(length - 2, 2, newVar);
+            }
+        }
+
+```
 
 ## Conclusions / Screenshots / Results
 
 Result after executing the code:
 
 ```
-Token(0, "2")
-Token(1, "*")
-Token(2, "(")
-Token(2, "(")
-Token(0, "3")
-Token(1, "+") 
-Token(0, "4")
-Token(3, ")")
-Token(1, "/")
-Token(0, "5")
-Token(3, ")")
-Token(1, "/")
-Token(0, "13.451")  
+A -> AX1
+X1 -> a
+A -> AX2
+X2 -> b
+A -> a
+A -> b
+B -> AX1
+B -> a
+B -> b
+S -> b
 ```
 
 Sadly couldnt upload photos but uploaded the output of the program execution.
 for execution on own machine do the following commands:<br />
-cd src<br />
-mkdir build<br />
-cd build<br />
-cmake ..<br />
-make<br />
-./LFAF<br />
+
+```
+cd src
+mkdir build
+cd build
+cmake ..
+make
+./LFAF
+```
 
 Updated from last laboratory everything unused was commented in case of need to use them in
 later laboratories otherwise everything was left as is
 
-In conclusion i can say that i have learned a lot about Tokenizers and Lexers and their
-properties and how to differentiate a Tokenizer to a Lexer.
+In conclusion i can say that i have learned a lot about CNF and reinforced the knowledge
+given to me at the course.
 
 ## References
 
 *Mr. Drumea's Laboratories*<br />
 *Mrs. Cojuhari's Lectures*
+
+https://cyberzhg.github.io/toolbox/cfg2cnf
+https://en.wikipedia.org/wiki/Chomsky_normal_form
+https://www.youtube.com/watch?v=-SZkkMWHBvQ
