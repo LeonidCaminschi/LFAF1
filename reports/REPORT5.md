@@ -1,4 +1,4 @@
-# Laboratory 4 CNF (Chomsky Normal Form)
+# Laboratory 5 Parser & Building an abstract Tree
 
 ### Course: Formal Languages & Finite Automata
 ### Author: Caminschi Leonid FAF-211 (Leonidas)
@@ -6,22 +6,19 @@
 ----
 
 ## Theory
-Short theory for obtaining chomsky normal form we have to go through 5 stages.
-1) remove epsilon enclosures and replace them at a higher level with terminal characters.
-2) removing NonTerminal - NonTerminal productions and generating their equivalent.
-3) removing the innacesible symbols if there are any inaccesible symbols after the first 2 steps.
-4) removing non productive productions which means removing any loop in our productions.
-5) We modify the final productions according to rules:
-    a) Are allowed Terminal -> NonTerminal.
-    b) Are allowed Terminal -> Terminal + Terminal.
-    c) in case of Terminal -> Terminal + NonTerminal we create a new production storing the nonterminal value.
+Short theory about parser and abstract syntax tree.
+Parser is the next layer after lexer and tokenization was done, it is responsible for constructing the parser tree or Abstract syntax tree that represents the hierachical structure of the code at which point it should be executed by the next layer an interpreter
 
 
 ## Objectives:
-
-* Get accustomed to CNF and step by step transformation.
-* Learn how to create a program to automatically transform into CNF.
-* Understand how it is aplicable.
+1. Get familiar with parsing, what it is and how it can be programmed [1].
+2. Get familiar with the concept of AST [2].
+3. In addition to what has been done in the 3rd lab work do the following:
+   1. In case you didn't have a type that denotes the possible types of tokens you need to:
+      1. Have a type __*TokenType*__ (like an enum) that can be used in the lexical analysis to categorize the tokens. 
+      2. Please use regular expressions to identify the type of the token.
+   2. Implement the necessary data structures for an AST that could be used for the text you have processed in the 3rd lab work.
+   3. Implement a simple parser program that could extract the syntactic information from the input text.
 
 ## Implementation description
 
@@ -32,187 +29,88 @@ All was done.
 
 * Code snippets from my files.
 
-We have a centralized method which calls each step of CNF separately for simplicity sake.
+The following snippets of code and comments were done on a Top-down parser.
 
 ```
+double factor() {
+    if (currentTokenIndex >= tokens.size()) {
+        throw std::runtime_error("Error: Unexpected end of input.");
+    }
 
-void toCNF() {
-    eliminateEpsilonProductions();
-    eliminateRenaming();
-    eliminateInaccessibleSymbols();
-    eliminateNonproductiveSymbols();
-    convertToChomskyNormalForm();
-}
-
-```
-
-We eliminate each production with epsilon and then check for Terminal character eliminated so we update each other example S -> Ca , C -> ε
-we remove C -> ε and change S -> Ca to S -> a.
-
-In this particular snippet we add each rule we encounter with epsilon into a map.
-
-```
-
-if (r.Right == "ε") {
-    epsilonVars.insert(r.Left);
-}
-            
-```
-
-And here we process each marked rule according to the example above.
-
-```
-for (const auto &c: it->Right) {
-    if (string(1, c) == var) {
-        size_t n = combinations.size();
-        for (size_t i = 0; i < n; i++) {
-            combinations.push_back(combinations[i]);
-            combinations.back().push_back(c);
-            combinations[i].push_back(' ');
+    Token token = tokens[currentTokenIndex++];
+    if (token.type == TokenType::NUMBER) {
+        return std::stod(token.value);
+    } else if (token.type == TokenType::LPAREN) {
+        double result = expression();
+        if (currentTokenIndex >= tokens.size() || tokens[currentTokenIndex++].type != TokenType::RPAREN) {
+            throw std::runtime_error("Error: Missing closing parenthesis.");
         }
+        return result;
     } else {
-        for (auto &s: combinations) {
-            s.push_back(c);
-        }
+        throw std::runtime_error("Error: Invalid token encountered.");
     }
 }
-
 ```
 
-We eliminate renaming and the replace with their equvalent parts
-A -> B would lets assume be changed to A -> C , C -> B.
-
-I itterate through all of the production searching for NonTerminal -> NonTerminal and
-process through it as to eliminate all renamings.
+Parses a factor, which can be a number or a parenthesized expression. If a number is encountered, it converts and returns the numeric value. If a left parenthesis is encountered, it recursively calls expression to evaluate the subexpression within the parentheses. Throws errors for unexpected end of input, missing closing parenthesis, or encountering an invalid token.
 
 ```
+double term() {
+    double result = factor();
 
-for (const auto &r: productions) {
-    if (r.Right.size() == 1 && isupper(r.Right[0])) {
-        replacements.emplace(r.Left, vector<vector<string>>{{r.Right}});
-    } else {
-        vector<vector<string>> right_parts;
-        vector<string> current_part;
-        for (char c: r.Right) {
-            if (isupper(c)) {
-                if (!current_part.empty()) {
-                    right_parts.push_back(current_part);
-                    current_part.clear();
-                }
-                current_part.push_back(string(1, c));
-            } else {
-                current_part.push_back(string(1, c));
-            }
-        }
-        if (!current_part.empty()) {
-            right_parts.push_back(current_part);
-        }
-        if (replacements.count(r.Left) == 0) {
-            replacements.emplace(r.Left, vector<vector<string>>{right_parts[0]});
+    while (currentTokenIndex < tokens.size() &&(tokens[currentTokenIndex].value == "*" || tokens[currentTokenIndex].value == "/")) 
+    {
+        std::string op = tokens[currentTokenIndex++].value;
+        if (op == "*") {
+            result *= factor();
         } else {
-            replacements[r.Left].push_back(right_parts[0]);
-        }
-        for (size_t i = 1; i < right_parts.size(); i++) {
-            replacements[r.Left].push_back(right_parts[i]);
-        }
-    }
-}
-
-```
-
-Now we eliminate innaccesible symbols example: S -> A , A -> B , D -> B in this case D -> B is going to get removed.
-
-```
-
-for (const auto &r: productions) {
-    if (find(reachable_symbols.begin(), reachable_symbols.end(), r.Left) != reachable_symbols.end()) {
-        for (char c: r.Right) {
-            if (isupper(c)) {
-                string var(1, c);
-                if (find(reachable_symbols.begin(), reachable_symbols.end(), var) ==
-                    reachable_symbols.end()) {
-                    reachable_symbols.push_back(var);
-                    found_new_symbol = true;
-                }
+            double divisor = factor();
+            if (divisor != 0.0) {
+                result /= divisor;
+            } else {
+                throw std::runtime_error("Error: Division by zero.");
             }
         }
     }
+    return result;
 }
-
 ```
 
-, now we eliminate non productive symbols example S -> A , A -> S.
-
-Search for rule loops and remove them while updating the old ones and repeat it until no more loops are found.
+Parses a term, which consists of factors separated by multiplication or division operators. It recursively calls factor and performs multiplication or division based on the encountered operators. Handles division by zero exception.
 
 ```
+double expression() {
+    double result = term();
 
-for (const auto &r: productions) {
-    if (find(productive_symbols.begin(), productive_symbols.end(), r.Left) != productive_symbols.end()) {
-        bool is_productive = true;
-        for (char c: r.Right) {
-            if (isupper(c)) {
-                string var(1, c);
-                if (find(productive_symbols.begin(), productive_symbols.end(), var) ==
-                    productive_symbols.end()) {
-                    is_productive = false;
-                    break;
-                }
-            }
-        }
-        
-        if (is_productive) {
-            string var = string() + r.Left;
-            if (find(productive_symbols.begin(), productive_symbols.end(), var) ==
-                productive_symbols.end()) {
-                productive_symbols.push_back(var);
-                found_new_symbol = true;
-            }
+    while (currentTokenIndex < tokens.size() && (tokens[currentTokenIndex].value == "+" || tokens[currentTokenIndex].value == "-")) 
+    {
+        std::string op = tokens[currentTokenIndex++].value;
+        if (op == "+") {
+            result += term();
+        } else {
+            result -= term();
         }
     }
+    return result;
 }
-            
 ```
 
-Now we conver the final result into Chomsky normal Form as explained in the theory S -> Aa will get transformed into S -> AX1 , X1 -> a.
-
-Iterate through rules and update them according to the rules above,
-also checking if there are already rules in place when finding one more match.
+Parses an expression, which consists of terms separated by addition or subtraction operators. It recursively calls term and performs addition or subtraction based on the encountered operators.
 
 ```
-
-for (Rule &r: productions) {
-    if (r.Right.size() > 2) {
-        string newVar = "X" + to_string(index++);
-        int length = r.Right.length();
-        for (int i = 0; i < length - 2; i++) {
-            string newRuleVar = (i == 0) ? r.Left : newVar;
-            string newRuleRight = r.Right.substr(i, 2);
-            productions.push_back({newRuleVar, newRuleRight});
-            r.Right.replace(i, 2, newRuleVar);
-        }
-        productions.push_back({newVar, r.Right.substr(length - 2, 2)});
-        r.Right.replace(length - 2, 2, newVar);
-    }
+double parse() {
+    return expression();
 }
-
 ```
+
+Entry point of the parsing process. It calls the expression function to parse and evaluate the expression and returns the final result.
 
 ## Conclusions / Screenshots / Results
 
 Result after executing the code:
 
 ```
-A -> AX1
-X1 -> a
-A -> AX2
-X2 -> b
-A -> a
-A -> b
-B -> AX1
-B -> a
-B -> b
-S -> b
+Result: 0.208163
 ```
 
 Sadly couldnt upload photos but uploaded the output of the program execution.
@@ -227,8 +125,7 @@ make
 ./LFAF
 ```
 
-Updated from last laboratory everything unused was commented in case of need to use them in
-later laboratories otherwise everything was left as is.
+Reformated the repository removing the unused code from main leaving it as minimal as possible and because i had from my opinion to many files used in different places i made directories for each code representing a lab or a group of laboratories.
 
 In conclusion i can say that i have learned a lot about CNF and reinforced the knowledge
 given to me at the course.
@@ -238,6 +135,8 @@ given to me at the course.
 *Mr. Drumea's Laboratories*<br />
 *Mrs. Cojuhari's Lectures*
 
-https://cyberzhg.github.io/toolbox/cfg2cnf
-https://en.wikipedia.org/wiki/Chomsky_normal_form
-https://www.youtube.com/watch?v=-SZkkMWHBvQ
+## Online References
+
+https://en.wikipedia.org/wiki/Parsing
+https://www.youtube.com/watch?v=4m7ubrdbWQU&t=45s
+https://www.geeksforgeeks.org/types-of-parsers-in-compiler-design/
