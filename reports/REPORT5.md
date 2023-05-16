@@ -137,6 +137,6 @@ given to me at the course.
 
 ## Online References
 
-https://en.wikipedia.org/wiki/Parsing
-https://www.youtube.com/watch?v=4m7ubrdbWQU&t=45s
+https://en.wikipedia.org/wiki/Parsing<br />
+https://www.youtube.com/watch?v=4m7ubrdbWQU&t=45s<br />
 https://www.geeksforgeeks.org/types-of-parsers-in-compiler-design/
