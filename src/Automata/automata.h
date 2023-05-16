@@ -3,7 +3,7 @@
 #include <map>
 #include <sstream>
 #include <queue>
-#include "grammar.h"
+#include "../Grammar/grammar.h"
 
 struct Automata {
     std::map<std::pair<std::string, std::string>, std::string> transitions;
@@ -14,7 +14,7 @@ struct Automata {
 
     Automata() {}
     Automata(Grammar& gr) {
-        for (Rule v : gr.productions) {
+        for (rule v : gr.productions) {
             transitions[make_pair(v[0], v[1].substr(0, 1))] = v[1].substr(1, 1);
             states.push_back(v[0]);
             symbols.push_back(v[1].substr(0, 1));
