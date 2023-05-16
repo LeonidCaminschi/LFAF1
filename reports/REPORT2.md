@@ -1,4 +1,4 @@
-# The title of the work
+# Laboratory work Nr2 Grammar and Automata
 
 ### Course: Formal Languages & Finite Automata
 ### Author: Caminschi Leonid FAF-211 (Leonidas)
